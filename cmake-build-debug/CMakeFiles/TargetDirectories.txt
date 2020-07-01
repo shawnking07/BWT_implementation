@@ -1,0 +1,4 @@
+/tmp/tmp.856PEwy4gP/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/tmp/tmp.856PEwy4gP/cmake-build-debug/CMakeFiles/bwtdecode.dir
+/tmp/tmp.856PEwy4gP/cmake-build-debug/CMakeFiles/edit_cache.dir
+/tmp/tmp.856PEwy4gP/cmake-build-debug/CMakeFiles/bwtsearch.dir

@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/bwtdecode.dir/bwtdecode.cpp.o  -o bwtdecode  -L/usr/local/lib 

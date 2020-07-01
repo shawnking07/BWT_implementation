@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/bwtsearch.dir/bwtsearch.cpp.o  -o bwtsearch  -L/usr/local/lib 
