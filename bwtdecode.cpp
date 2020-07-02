@@ -10,33 +10,52 @@
 
 using namespace std;
 
-#define BUFFER_SIZE 12000000 // buffer size for input
+#define BUFFER_SIZE 10000000 // buffer size for read
 
-char values[5] = {'\n', 'A', 'C', 'G', 'T'};
 char buffer[BUFFER_SIZE];
+int buffer_count[BUFFER_SIZE] = {0};
 vector<vector<int> > first_row;
 vector<int> first_array;
 
 
-int index_of_values(char c){
-    for(int i =0;i<5;i++){
-        if (c == values[i]){
-            return i;
-        }
+int index_of_values(char c) {
+    switch (c) {
+        case '\n':
+            return 0;
+        case 'A':
+            return 1;
+        case 'C':
+            return 2;
+        case 'G':
+            return 3;
+        case 'T':
+            return 4;
+        default:
+            return -1;
     }
-    return -1;
 }
 
 void read_from_stream(int next_index, int current_index, ifstream &str) {
-    str.clear();
     if (next_index / BUFFER_SIZE == current_index / BUFFER_SIZE) {
         // in same buffer no need to read
         return;
     }
+    str.clear();
     int start_pos = (next_index / BUFFER_SIZE) * BUFFER_SIZE;
     str.seekg(start_pos);
-    memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
-    str.read(buffer, sizeof(char) * BUFFER_SIZE);
+    memset(buffer, 0, sizeof(buffer));
+    str.read(buffer, sizeof(buffer));
+
+    int sum[] = {0, 0, 0, 0, 0};
+    memset(buffer_count, 0, sizeof(buffer_count));
+    for (int i = 0; i < BUFFER_SIZE; i++) {
+        char val = buffer[i];
+        if (val == '\0') {
+            break;
+        }
+        sum[index_of_values(val)]++;
+        buffer_count[i] = sum[index_of_values(val)];
+    }
 }
 
 void construct_first_row(ifstream &str) {
@@ -50,47 +69,21 @@ void construct_first_row(ifstream &str) {
 
     int count = 0;
     while (!str.eof()) {
-        memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
-        str.read(buffer, sizeof(char) * BUFFER_SIZE);
+        memset(buffer, 0, sizeof(buffer));
+        str.read(buffer, sizeof(buffer));
         for (char &i : buffer) {
-            auto itr = find(values, values + 5, i);
-            if (itr == values + 5) {
-                break;
-            }
-            int index = distance(values, itr);
-            first_row[count][index]++;
-
+            first_row[count][index_of_values(i)]++;
         }
-//        for (int i = 1; i < 5; i++) {
-//            // sum previous
-//            first_row[count][i] += first_row[count][i - 1];
-//        }
         count++;
+        if (count < m) first_row[count].assign(first_row[count - 1].begin(), first_row[count - 1].end());
     }
 
     for (int i = 1; i < m; i++) {
-        for (int j = 0; j < 5; j++) {
-            first_row[i][j] += first_row[i - 1][j];
-        }
+
     }
     first_row.insert(first_row.begin(), vector({0, 0, 0, 0, 0}));
 }
 
-/**
- * count shown times of buffer[index_in_buffer] in buffer
- * @param index_in_buffer
- * @return
- */
-int number_of_s_in_buffer(int index_in_buffer) {
-    int num = 0;
-    char val = buffer[index_in_buffer];
-    for (int i = 0; i <= index_in_buffer; i++) {
-        if (buffer[i] == val) {
-            num++;
-        }
-    }
-    return num;
-}
 
 void get_first_array() {
     first_array = vector(*first_row.rbegin());
@@ -124,12 +117,11 @@ void decode(int total_size, ifstream &input, ofstream &output) {
 
         int index = index_of_values(current_val); // index of ATCG values
         int p = active_index;
-        active_index = first_array[index - 1] + number_of_s_in_buffer(index_of_buffer) + first_row[m][index] - 1;
+        active_index = first_array[index - 1] + buffer_count[index_of_buffer] + first_row[m][index] - 1;
         read_from_stream(active_index, p, input);
         count++;
     }
 }
-
 
 
 int main(int argc, char *argv[]) {
