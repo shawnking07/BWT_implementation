@@ -6,16 +6,16 @@
 #include <iostream>
 #include <algorithm>
 #include <cstring>
-#include <vector>
+#include <filesystem>
 
 using namespace std;
 
-#define BUFFER_SIZE 10000000 // buffer size for read
+#define BUFFER_SIZE 5000000 // buffer size for read
 
 char buffer[BUFFER_SIZE];
-int buffer_count[BUFFER_SIZE] = {0};
-vector<vector<int> > first_row;
-vector<int> first_array;
+int buffer_count[BUFFER_SIZE];
+int first_array[5] = {0};
+int total_size = 0;
 
 
 int index_of_values(char c) {
@@ -35,7 +35,7 @@ int index_of_values(char c) {
     }
 }
 
-void read_from_stream(int next_index, int current_index, ifstream &str) {
+void read_from_stream(int next_index, int current_index, ifstream &str, fstream &out) {
     if (next_index / BUFFER_SIZE == current_index / BUFFER_SIZE) {
         // in same buffer no need to read
         return;
@@ -46,63 +46,46 @@ void read_from_stream(int next_index, int current_index, ifstream &str) {
     memset(buffer, 0, sizeof(buffer));
     str.read(buffer, sizeof(buffer));
 
-    int sum[] = {0, 0, 0, 0, 0};
     memset(buffer_count, 0, sizeof(buffer_count));
-    for (int i = 0; i < BUFFER_SIZE; i++) {
-        char val = buffer[i];
-        if (val == '\0') {
-            break;
-        }
-        sum[index_of_values(val)]++;
-        buffer_count[i] = sum[index_of_values(val)];
-    }
+    out.clear();
+    int start_pos_out = (next_index / BUFFER_SIZE) * BUFFER_SIZE + total_size;
+    out.seekg(start_pos_out);
+    out.read((char *) &buffer_count, sizeof(buffer_count));
 }
 
-void construct_first_row(ifstream &str) {
+void construct_first_row(ifstream &str, fstream &out) {
+    // write count to output as tmp file
+    out.clear();
+    out.seekp(total_size);
     str.clear();
-    str.seekg(0, ios::end);
-    int total_size = str.tellg();
-    int m = total_size / BUFFER_SIZE + 1;
     str.seekg(0);
-
-    first_row.resize(m, vector<int>(5));
-
-    int count = 0;
     while (!str.eof()) {
         memset(buffer, 0, sizeof(buffer));
         str.read(buffer, sizeof(buffer));
         for (char &i : buffer) {
-            first_row[count][index_of_values(i)]++;
+            int val = first_array[index_of_values(i)];
+            out.write(reinterpret_cast<const char *>(&val), sizeof(int));
+            first_array[index_of_values(i)]++;
         }
-        count++;
-        if (count < m) first_row[count].assign(first_row[count - 1].begin(), first_row[count - 1].end());
     }
 
-    for (int i = 1; i < m; i++) {
-
-    }
-    first_row.insert(first_row.begin(), vector({0, 0, 0, 0, 0}));
-}
-
-
-void get_first_array() {
-    first_array = vector(*first_row.rbegin());
     for (int i = 1; i < 5; i++) {
-        // sum previous
         first_array[i] += first_array[i - 1];
     }
 }
 
+void clean_output(char* output){
+    filesystem::resize_file(output, total_size);
+}
 
-void decode(int total_size, ifstream &input, ofstream &output) {
+void decode(ifstream &input, fstream &output) {
     int active_index = 0;
     int count = 1;
     // reversed output
     output.seekp(total_size - 1);
     output.put('\n');
-    read_from_stream(0, BUFFER_SIZE, input);
+    read_from_stream(0, BUFFER_SIZE, input, output);
     while (true) {
-        int m = active_index / BUFFER_SIZE; // m of vector first_row
         int index_of_buffer = active_index % BUFFER_SIZE;
 
         char current_val = buffer[index_of_buffer];
@@ -117,8 +100,8 @@ void decode(int total_size, ifstream &input, ofstream &output) {
 
         int index = index_of_values(current_val); // index of ATCG values
         int p = active_index;
-        active_index = first_array[index - 1] + buffer_count[index_of_buffer] + first_row[m][index] - 1;
-        read_from_stream(active_index, p, input);
+        active_index = first_array[index - 1] + buffer_count[index_of_buffer];
+        read_from_stream(active_index, p, input, output);
         count++;
     }
 }
@@ -126,15 +109,15 @@ void decode(int total_size, ifstream &input, ofstream &output) {
 
 int main(int argc, char *argv[]) {
     ifstream encodedFile(argv[1]);
-    ofstream outputFile(argv[2]);
+    fstream outputFile(argv[2], ios::out | ios::in | ios::trunc);
 
     encodedFile.clear();
     encodedFile.seekg(0, ios::end);
-    int total_size = encodedFile.tellg();
+    total_size = encodedFile.tellg();
 
-    construct_first_row(encodedFile);
-    get_first_array();
-    decode(total_size, encodedFile, outputFile);
+    construct_first_row(encodedFile, outputFile);
+    decode(encodedFile, outputFile);
+    clean_output(argv[2]);
 
     encodedFile.clear();
     encodedFile.close();
