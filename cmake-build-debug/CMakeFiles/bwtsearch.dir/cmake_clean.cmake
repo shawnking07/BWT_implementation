@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/bwtsearch.dir/bwtsearch.cpp.o"
-  "bwtsearch.pdb"
   "bwtsearch"
+  "bwtsearch.pdb"
 )
 
 # Per-language clean rules from dependency scanning.
