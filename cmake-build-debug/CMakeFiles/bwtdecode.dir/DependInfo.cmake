@@ -1,15 +1,15 @@
 # The set of languages for which implicit dependencies are needed:
 set(CMAKE_DEPENDS_LANGUAGES
-  "CXX"
+  "C"
   )
 # The set of files for implicit dependencies of each language:
-set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2/bwtdecode.cpp" "/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2/cmake-build-debug/CMakeFiles/bwtdecode.dir/bwtdecode.cpp.o"
+set(CMAKE_DEPENDS_CHECK_C
+  "/tmp/tmp.856PEwy4gP/bwtdecode.c" "/tmp/tmp.856PEwy4gP/cmake-build-debug/CMakeFiles/bwtdecode.dir/bwtdecode.c.o"
   )
-set(CMAKE_CXX_COMPILER_ID "AppleClang")
+set(CMAKE_C_COMPILER_ID "GNU")
 
 # The include file search paths:
-set(CMAKE_CXX_TARGET_INCLUDE_PATH
+set(CMAKE_C_TARGET_INCLUDE_PATH
   "/usr/local/include"
   )
 
