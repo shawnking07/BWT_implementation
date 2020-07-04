@@ -10,7 +10,8 @@
 
 using namespace std;
 
-#define BUFFER_SIZE 5000000 // buffer size for read
+#define BUFFER_SIZE 10000000 // buffer size for read
+#define OUTPUT_BUFFER_SIZE 1000000
 
 char buffer[BUFFER_SIZE];
 int buffer_count[BUFFER_SIZE];
@@ -74,29 +75,39 @@ void construct_first_row(ifstream &str, fstream &out) {
     }
 }
 
-void clean_output(char* output){
+void clean_output(char *output) {
     filesystem::resize_file(output, total_size);
 }
 
+void reverse(char *str) {
+    int len = strlen(str);
+    for (int i = 0; i < len / 2; i++) {
+        swap(str[i], str[len - 1 - i]);
+    }
+}
+
 void decode(ifstream &input, fstream &output) {
+    char *output_val = new char[OUTPUT_BUFFER_SIZE];
     int active_index = 0;
-    int count = 1;
+    int count = 0;
     // reversed output
     output.seekp(total_size - 1);
     output.put('\n');
     read_from_stream(0, BUFFER_SIZE, input, output);
-    while (true) {
+    while (count < total_size) {
         int index_of_buffer = active_index % BUFFER_SIZE;
 
         char current_val = buffer[index_of_buffer];
 
-        if (current_val == '\n') {
-            break;
+        if ((count % OUTPUT_BUFFER_SIZE == 0 && count != 0) || count == total_size - 1) {
+            output.clear();
+            output.seekp(total_size - count - 1);
+            reverse(output_val);
+            output.write(output_val, strlen(output_val));
+            memset(output_val, 0, OUTPUT_BUFFER_SIZE);
         }
 
-        output.clear();
-        output.seekp(total_size - count - 1);
-        output.put(current_val);
+        output_val[count % OUTPUT_BUFFER_SIZE] = current_val;
 
         int index = index_of_values(current_val); // index of ATCG values
         int p = active_index;
@@ -104,6 +115,7 @@ void decode(ifstream &input, fstream &output) {
         read_from_stream(active_index, p, input, output);
         count++;
     }
+    delete[] output_val;
 }
 
 
