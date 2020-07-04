@@ -10,8 +10,8 @@
 
 using namespace std;
 
-#define BUFFER_SIZE 10000000 // buffer size for read
-#define OUTPUT_BUFFER_SIZE 1000000
+#define BUFFER_SIZE 1000000 // buffer size for read
+#define OUTPUT_BUFFER_SIZE 100000
 
 char buffer[BUFFER_SIZE];
 int buffer_count[BUFFER_SIZE];
@@ -44,14 +44,14 @@ void read_from_stream(int next_index, int current_index, ifstream &str, fstream 
     str.clear();
     int start_pos = (next_index / BUFFER_SIZE) * BUFFER_SIZE;
     str.seekg(start_pos);
-    memset(buffer, 0, sizeof(buffer));
-    str.read(buffer, sizeof(buffer));
+    memset(buffer, 0, BUFFER_SIZE);
+    str.read(buffer, BUFFER_SIZE);
 
-    memset(buffer_count, 0, sizeof(buffer_count));
+    memset(buffer_count, 0, BUFFER_SIZE * 4);
     out.clear();
     int start_pos_out = (next_index / BUFFER_SIZE) * BUFFER_SIZE + total_size;
     out.seekg(start_pos_out);
-    out.read((char *) &buffer_count, sizeof(buffer_count));
+    out.read((char *) &buffer_count, BUFFER_SIZE * 4);
 }
 
 void construct_first_row(ifstream &str, fstream &out) {
@@ -61,13 +61,14 @@ void construct_first_row(ifstream &str, fstream &out) {
     str.clear();
     str.seekg(0);
     while (!str.eof()) {
-        memset(buffer, 0, sizeof(buffer));
-        str.read(buffer, sizeof(buffer));
-        for (char &i : buffer) {
-            int val = first_array[index_of_values(i)];
-            out.write(reinterpret_cast<const char *>(&val), sizeof(int));
-            first_array[index_of_values(i)]++;
+        memset(buffer, 0, BUFFER_SIZE);
+        str.read(buffer, BUFFER_SIZE);
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            int val = first_array[index_of_values(buffer[i])];
+            buffer_count[i] = val;
+            first_array[index_of_values(buffer[i])]++;
         }
+        out.write(reinterpret_cast<const char *>(&buffer_count), sizeof(int) * BUFFER_SIZE);
     }
 
     for (int i = 1; i < 5; i++) {
