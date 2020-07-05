@@ -7,8 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BUFFER_SIZE 4000000 // buffer size for read
-#define OUTPUT_BUFFER_SIZE 1000000
+#define BUFFER_SIZE (4096 * 128) // buffer size for read
+#define RANDOM_BUFFER_SIZE 128
+#define OUTPUT_BUFFER_SIZE 4096
+#define K 1
 
 char buffer[BUFFER_SIZE];
 int buffer_count[BUFFER_SIZE];
@@ -33,34 +35,38 @@ int index_of_values(char c) {
     }
 }
 
-void read_from_stream(int next_index, int current_index, FILE *str, FILE *out) {
-    if (next_index / BUFFER_SIZE == current_index / BUFFER_SIZE) {
+void read_from_stream(int next_index, int current_index, int size, FILE *str, FILE *out) {
+    if (next_index / size == current_index / size) {
         // in same buffer no need to read
         return;
     }
-    int start_pos = (next_index / BUFFER_SIZE) * BUFFER_SIZE;
+    int start_pos = (next_index / size) * size;
     fseek(str, start_pos, SEEK_SET);
     memset(buffer, 0, BUFFER_SIZE);
 
-    fread(buffer, 1, BUFFER_SIZE, str);
+    fread(buffer, 1, size, str);
 
     memset(buffer_count, 0, BUFFER_SIZE * 4);
-    int start_pos_out = (next_index / BUFFER_SIZE) * BUFFER_SIZE * 4 + total_size + 1;
+    int start_pos_out = (next_index / size) * size * 4 + total_size + 1;
     fseek(out, start_pos_out, SEEK_SET);
-    fread(buffer_count, 4, BUFFER_SIZE, out);
+    fread(buffer_count, 4, size, out);
 }
 
 void construct_first_row(FILE *str, FILE *out) {
     // write count to output as tmp file
     fseek(str, 0, SEEK_SET);
     fseek(out, total_size + 1, SEEK_SET);
-    int val;
+    int val, idx;
     while (!feof(str)) {
         memset(buffer, 0, BUFFER_SIZE);
         memset(buffer_count, 0, BUFFER_SIZE * 4);
         fread(buffer, 1, BUFFER_SIZE, str);
         for (int i = 0; i < BUFFER_SIZE; i++) {
-            val = first_array[index_of_values(buffer[i])];
+            idx = index_of_values(buffer[i]);
+            if (idx == -1) {
+                break;
+            }
+            val = first_array[idx];
             buffer_count[i] = val;
             first_array[index_of_values(buffer[i])]++;
         }
@@ -87,15 +93,18 @@ void reverse(char *str) {
 }
 
 void decode(FILE *input, FILE *output) {
-    char *output_val = malloc(BUFFER_SIZE);
+    char *output_val = malloc(OUTPUT_BUFFER_SIZE);
     int active_index = 0;
     int count = 0;
     // reversed output
-    read_from_stream(0, BUFFER_SIZE, input, output);
-    int index_of_buffer, index, p;
+    read_from_stream(0, BUFFER_SIZE, BUFFER_SIZE, input, output);
+    int index_of_buffer, index, p, random_buffer_size = BUFFER_SIZE;
+    if (total_size > BUFFER_SIZE * K) {
+        random_buffer_size = RANDOM_BUFFER_SIZE;
+    }
     char current_val;
     while (count < total_size) {
-        index_of_buffer = active_index % BUFFER_SIZE;
+        index_of_buffer = active_index % random_buffer_size;
 
         current_val = buffer[index_of_buffer];
 
@@ -111,7 +120,7 @@ void decode(FILE *input, FILE *output) {
         index = index_of_values(current_val); // index of ATCG values
         p = active_index;
         active_index = first_array[index - 1] + buffer_count[index_of_buffer];
-        read_from_stream(active_index, p, input, output);
+        read_from_stream(active_index, p, random_buffer_size, input, output);
 
         count++;
     }

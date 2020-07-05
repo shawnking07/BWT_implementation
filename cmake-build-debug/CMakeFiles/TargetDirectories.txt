@@ -1,4 +1,4 @@
-/tmp/tmp.856PEwy4gP/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/tmp/tmp.856PEwy4gP/cmake-build-debug/CMakeFiles/bwtdecode.dir
-/tmp/tmp.856PEwy4gP/cmake-build-debug/CMakeFiles/edit_cache.dir
-/tmp/tmp.856PEwy4gP/cmake-build-debug/CMakeFiles/bwtsearch.dir
+/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2/cmake-build-debug/CMakeFiles/bwtsearch.dir
+/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2/cmake-build-debug/CMakeFiles/bwtdecode.dir
