@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/bwtdecode.dir/bwtdecode.c.o"
-  "bwtdecode"
   "bwtdecode.pdb"
+  "bwtdecode"
 )
 
 # Per-language clean rules from dependency scanning.

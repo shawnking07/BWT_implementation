@@ -7,7 +7,7 @@
 #include <cstring>
 #include <vector>
 
-#define BUFFER_SIZE (4096*64)
+#define BUFFER_SIZE (4096*32)
 
 using namespace std;
 
@@ -106,8 +106,7 @@ RANGE generate_range(char c) {
 
 int search(const string &str, FILE *fp) {
     vector<int> next;
-    vector<int> tmp;
-    int count = 0;
+    int count = 0, tmp = 0;
     auto r = generate_range(*str.rbegin());
     int n = (r.end - r.start) / BUFFER_SIZE + 1;
     for (int i = 0; i < n; i++) {
@@ -123,15 +122,16 @@ int search(const string &str, FILE *fp) {
             for (auto it_next: next) {
                 read_buffer(it_next, fp);
                 if (buffer[it_next % BUFFER_SIZE] == *it) {
-                    tmp.push_back(buffer_count[it_next % BUFFER_SIZE] + total_number[index_of_values(*it) - 1]);
+                    next[tmp] = buffer_count[it_next % BUFFER_SIZE] + total_number[index_of_values(*it) - 1];
+                    tmp++;
                 }
             }
-            if (tmp.empty()) {
+            next.resize(tmp);
+            tmp = 0;
+            if (next.empty()) {
                 next.clear();
                 break;
             }
-            next = tmp;
-            tmp.clear();
         }
         count += next.size();
     }
