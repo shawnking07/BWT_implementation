@@ -7,9 +7,14 @@
 #include <cstring>
 #include <vector>
 
-#define BUFFER_SIZE (4096*10)
+#define BUFFER_SIZE (4096*64)
 
 using namespace std;
+
+struct RANGE {
+    int start;
+    int end;
+};
 
 char buffer[BUFFER_SIZE];
 int buffer_count[BUFFER_SIZE];
@@ -56,6 +61,12 @@ void construct_first_row(FILE *str) {
         count++;
     }
 
+    for (int i = 1; i < first_array.size(); i++) {
+        for (int j = 0; j < 5; j++) {
+            first_array[i][j] += first_array[i - 1][j];
+        }
+    }
+
     for (int i = 1; i < 5; i++) {
         total_number[i] += total_number[i - 1];
     }
@@ -66,7 +77,7 @@ void read_buffer(int start_index, FILE *fp) {
         return;
     }
     memset(buffer, 0, sizeof(buffer));
-    fseek(fp, start_index / BUFFER_SIZE * BUFFER_SIZE, SEEK_SET);
+    fseek(fp, start_index - start_index % BUFFER_SIZE, SEEK_SET);
     fread(buffer, 1, BUFFER_SIZE, fp);
 
     // count number for each char
@@ -82,26 +93,33 @@ void read_buffer(int start_index, FILE *fp) {
     current_start_index = start_index;
 }
 
-vector<int> generate_list(char c) {
-    vector<int> res;
+RANGE generate_range(char c) {
+    RANGE res{};
     int idx = index_of_values(c);
     if (idx == -1) {
         return res;
     }
-    for (int i = total_number[idx - 1]; i < total_number[idx]; i++) {
-        res.push_back(i);
-    }
+    res.start = total_number[idx - 1];
+    res.end = total_number[idx];
     return res;
 }
 
 int search(const string &str, FILE *fp) {
     vector<int> next;
     vector<int> tmp;
-    for (auto it = str.rbegin(); it != str.rend(); it++) {
-        if (it == str.rbegin()) {
-            // last char
-            next = generate_list(*it);
-        } else {
+    int count = 0;
+    auto r = generate_range(*str.rbegin());
+    int n = (r.end - r.start) / BUFFER_SIZE + 1;
+    for (int i = 0; i < n; i++) {
+        next.clear();
+        for (int j = r.start + i * BUFFER_SIZE; (j < r.start + (i + 1) * BUFFER_SIZE) && (j < r.end); j++) {
+            next.push_back(j);
+        }
+        if (str.size() == 1) {
+            count += next.size();
+            continue;
+        }
+        for (auto it = str.rbegin() + 1; it != str.rend(); it++) {
             for (auto it_next: next) {
                 read_buffer(it_next, fp);
                 if (buffer[it_next % BUFFER_SIZE] == *it) {
@@ -109,13 +127,15 @@ int search(const string &str, FILE *fp) {
                 }
             }
             if (tmp.empty()) {
-                return 0;
+                next.clear();
+                break;
             }
             next = tmp;
             tmp.clear();
         }
+        count += next.size();
     }
-    return next.size();
+    return count;
 }
 
 int main(int argc, char *argv[]) {
