@@ -1,4 +1,4 @@
-/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /tmp/tmp.856PEwy4gP
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" "/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2"
 -- Configuring done
 -- Generating done
--- Build files have been written to: /tmp/tmp.856PEwy4gP/cmake-build-debug
+-- Build files have been written to: /Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2/cmake-build-debug

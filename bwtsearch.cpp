@@ -6,8 +6,9 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
+#include <bitset>
 
-#define BUFFER_SIZE (4096*32)
+#define BUFFER_SIZE (4096)
 
 using namespace std;
 
@@ -22,6 +23,9 @@ int current_start_index = -BUFFER_SIZE;
 vector<vector<int> > first_array;
 vector<int> total_number;
 int total_size = 0;
+bitset<30 * 1024 * 1024> last_T;
+unsigned int pos_of_end = -1;
+int last_n = -1;
 
 int index_of_values(char c) {
     switch (c) {
@@ -105,35 +109,40 @@ RANGE generate_range(char c) {
 }
 
 int search(const string &str, FILE *fp) {
-    vector<int> next;
-    int count = 0, tmp = 0;
+    int count = 0, pos, pos2;
     auto r = generate_range(*str.rbegin());
-    int n = (r.end - r.start) / BUFFER_SIZE + 1;
-    for (int i = 0; i < n; i++) {
-        next.clear();
-        for (int j = r.start + i * BUFFER_SIZE; (j < r.start + (i + 1) * BUFFER_SIZE) && (j < r.end); j++) {
-            next.push_back(j);
-        }
+    RANGE next{.start=-1, .end=-2};
+    RANGE tmp{.start=-1, .end=-2};
+    for (int i = r.start / BUFFER_SIZE; i < r.end / BUFFER_SIZE + 1; i++) {
+        next.start = max(r.start, i * BUFFER_SIZE);
+        next.end = min((i + 1) * BUFFER_SIZE, r.end) - 1;
         if (str.size() == 1) {
-            count += next.size();
+            count += next.end - next.start + 1;
             continue;
         }
         for (auto it = str.rbegin() + 1; it != str.rend(); it++) {
-            for (auto it_next: next) {
-                read_buffer(it_next, fp);
-                if (buffer[it_next % BUFFER_SIZE] == *it) {
-                    next[tmp] = buffer_count[it_next % BUFFER_SIZE] + total_number[index_of_values(*it) - 1];
-                    tmp++;
+            tmp.start = -1;
+            tmp.end = -2;
+            for (pos = next.start; pos <= next.end; pos++) {
+                read_buffer(pos, fp);
+                if (buffer[pos % BUFFER_SIZE] == *it) {
+                    tmp.start = buffer_count[pos % BUFFER_SIZE] + total_number[index_of_values(*it) - 1];
+                    break;
                 }
             }
-            next.resize(tmp);
-            tmp = 0;
-            if (next.empty()) {
-                next.clear();
+            for (pos2 = next.end; pos2 >= pos; pos2--) {
+                read_buffer(pos2, fp);
+                if (buffer[pos2 % BUFFER_SIZE] == *it) {
+                    tmp.end = buffer_count[pos2 % BUFFER_SIZE] + total_number[index_of_values(*it) - 1];
+                    break;
+                }
+            }
+            next = tmp;
+            if (tmp.end - tmp.start < 0 || tmp.start == -1 || tmp.end == -2) {
                 break;
             }
         }
-        count += next.size();
+        count += next.end - next.start + 1;
     }
     return count;
 }

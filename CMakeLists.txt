@@ -11,7 +11,7 @@ link_directories(
         /usr/local/lib
 )
 
-file(GLOB_RECURSE mains RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" bwtdecode.c bwtsearch.cpp)
+file(GLOB_RECURSE mains RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" bwtdecode.cpp bwtsearch.cpp)
 
 foreach(mainfile IN LISTS mains)
     get_filename_component(mainname ${mainfile} NAME_WE)
