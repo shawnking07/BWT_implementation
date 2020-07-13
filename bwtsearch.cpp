@@ -6,7 +6,6 @@
 #include <cstdio>
 #include <cstring>
 #include <vector>
-#include <bitset>
 
 #define BUFFER_SIZE (4096)
 
@@ -19,13 +18,10 @@ struct RANGE {
 
 char buffer[BUFFER_SIZE];
 int buffer_count[BUFFER_SIZE];
-int current_start_index = -BUFFER_SIZE;
-vector<vector<int> > first_array;
+// occ table
+vector<vector<int> > occ_table;
 vector<int> total_number;
 int total_size = 0;
-bitset<30 * 1024 * 1024> last_T;
-unsigned int pos_of_end = -1;
-int last_n = -1;
 
 int index_of_values(char c) {
     switch (c) {
@@ -44,13 +40,13 @@ int index_of_values(char c) {
     }
 }
 
-void construct_first_row(FILE *str) {
+void construct_occ_table(FILE *str) {
     // write count to output as tmp file
     rewind(str);
     int idx, count = 1;
     total_number.resize(5);
 
-    first_array = vector(total_size / BUFFER_SIZE + 2, vector<int>(5));
+    occ_table = vector(total_size / BUFFER_SIZE + 2, vector<int>(5));
     while (!feof(str)) {
         memset(buffer, 0, BUFFER_SIZE);
         fread(buffer, 1, BUFFER_SIZE, str);
@@ -59,15 +55,15 @@ void construct_first_row(FILE *str) {
             if (idx == -1) {
                 break;
             }
-            first_array[count][idx]++;
+            occ_table[count][idx]++;
             total_number[idx]++;
         }
         count++;
     }
 
-    for (int i = 1; i < first_array.size(); i++) {
+    for (int i = 1; i < occ_table.size(); i++) {
         for (int j = 0; j < 5; j++) {
-            first_array[i][j] += first_array[i - 1][j];
+            occ_table[i][j] += occ_table[i - 1][j];
         }
     }
 
@@ -76,25 +72,21 @@ void construct_first_row(FILE *str) {
     }
 }
 
-void read_buffer(int start_index, FILE *fp) {
-    if (start_index / BUFFER_SIZE == current_start_index / BUFFER_SIZE) {
-        return;
-    }
+void read_buffer(int start_index, int end_index, FILE *fp) {
     memset(buffer, 0, sizeof(buffer));
     fseek(fp, start_index - start_index % BUFFER_SIZE, SEEK_SET);
     fread(buffer, 1, BUFFER_SIZE, fp);
 
     // count number for each char
-    auto count = first_array[start_index / BUFFER_SIZE];
+    auto count = occ_table[start_index / BUFFER_SIZE];
     for (int i = 0; i < BUFFER_SIZE; i++) {
+        if (i > end_index % BUFFER_SIZE) break;
         int idx = index_of_values(buffer[i]);
         if (idx == -1) {
             break;
         }
         buffer_count[i] = count[idx]++;
     }
-
-    current_start_index = start_index;
 }
 
 RANGE generate_range(char c) {
@@ -106,6 +98,11 @@ RANGE generate_range(char c) {
     res.start = total_number[idx - 1];
     res.end = total_number[idx];
     return res;
+}
+
+char get_c_pos(FILE *input, int pos) {
+    fseek(input, pos, SEEK_SET);
+    return getc(input);
 }
 
 int search(const string &str, FILE *fp) {
@@ -124,15 +121,15 @@ int search(const string &str, FILE *fp) {
             tmp.start = -1;
             tmp.end = -2;
             for (pos = next.start; pos <= next.end; pos++) {
-                read_buffer(pos, fp);
-                if (buffer[pos % BUFFER_SIZE] == *it) {
+                if (get_c_pos(fp, pos) == *it) {
+                    read_buffer(pos, pos, fp);
                     tmp.start = buffer_count[pos % BUFFER_SIZE] + total_number[index_of_values(*it) - 1];
                     break;
                 }
             }
             for (pos2 = next.end; pos2 >= pos; pos2--) {
-                read_buffer(pos2, fp);
-                if (buffer[pos2 % BUFFER_SIZE] == *it) {
+                if (get_c_pos(fp, pos2) == *it) {
+                    read_buffer(pos2, pos2, fp);
                     tmp.end = buffer_count[pos2 % BUFFER_SIZE] + total_number[index_of_values(*it) - 1];
                     break;
                 }
@@ -151,7 +148,7 @@ int main(int argc, char *argv[]) {
     FILE *encodedFile = fopen(argv[1], "rb");
     fseek(encodedFile, 0, SEEK_END);
     total_size = ftell(encodedFile);
-    construct_first_row(encodedFile);
+    construct_occ_table(encodedFile);
     string line;
     while (cin >> line) {
         cout << search(line, encodedFile) << endl;
