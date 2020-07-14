@@ -10,7 +10,7 @@
 
 using namespace std;
 
-#define BUFFER_SIZE (128)
+#define BUFFER_SIZE (512)
 
 struct bits_of_val {
     bool _1st;
@@ -23,7 +23,7 @@ vector<vector<int> > first_array;
 vector<int> total_number;
 // refer to A: 00 C: 01 T: 10 G:11
 bitset<30 * 1024 * 1024 + 2> last_T;
-bitset<30 * 1024 * 1024 + 2> raw;
+//bitset<30 * 1024 * 1024 + 2> raw;
 unsigned int pos_of_end = -1;
 
 int index_of_values(char c) {
@@ -117,7 +117,7 @@ void construct_first_row(FILE *input) {
 
 int read_buffer(int index) {
     auto c = get_from_bit_set(index);
-    bool reverse = (index % BUFFER_SIZE) > (BUFFER_SIZE / 2);
+    bool reverse = (index % BUFFER_SIZE) > (BUFFER_SIZE - 1 / 2);
     if (reverse) {
         auto count = first_array[index / BUFFER_SIZE + 1][index_of_values(c)];
         for (int i = (index / BUFFER_SIZE + 1) * BUFFER_SIZE - 1; i < index / BUFFER_SIZE * BUFFER_SIZE; i--) {
@@ -126,7 +126,6 @@ int read_buffer(int index) {
             count--;
             if (i == index)return count - 1;
         }
-        return count;
     } else {
         auto count = first_array[index / BUFFER_SIZE][index_of_values(c)];
         for (int i = index / BUFFER_SIZE * BUFFER_SIZE; i < (index / BUFFER_SIZE + 1) * BUFFER_SIZE; i++) {
@@ -135,11 +134,22 @@ int read_buffer(int index) {
             count++;
             if (i == index)return count;
         }
-        return count;
+    }
+    return -1;
+}
+
+void reverse(char *str) {
+    int len = strlen(str);
+    char tmp;
+    for (int i = 0; i < len / 2; i++) {
+        tmp = str[i];
+        str[i] = str[len - 1 - i];
+        str[len - 1 - i] = tmp;
     }
 }
 
 void decode(FILE *output) {
+    char *output_val = new char[BUFFER_SIZE];
     int active_index = 0;
     int count = 0;
     // reversed output
@@ -147,18 +157,30 @@ void decode(FILE *output) {
     while (count < total_size) {
         current_val = get_from_bit_set(active_index);
 
-        auto c = convert(current_val);
-        raw[count * 2] = c._1st;
-        raw[count * 2 + 1] = c._2nd;
+        if ((count % BUFFER_SIZE == 0 && count != 0) || count == total_size - 1) {
+            fseek(output, total_size - count - 1, SEEK_SET);
+            reverse(output_val);
+            fwrite(output_val, 1, strlen(output_val), output);
+            memset(output_val, 0, BUFFER_SIZE);
+        }
 
-        active_index = read_buffer(active_index) + total_number[index_of_values(current_val) - 1] - 1;
+        output_val[count % BUFFER_SIZE] = current_val;
+
+        auto ct = read_buffer(active_index);
+        if (ct == -1) {
+            exit(-1);
+        }
+
+        active_index = ct + total_number[index_of_values(current_val) - 1] - 1;
         count++;
     }
-    for (int i = total_size - 2; i >= 0; i--) {
-        auto c = convert(raw[i * 2], raw[i * 2 + 1], i * 2);
-        putc(c, output);
-    }
-    fputc('\n', output);
+//    for (int i = total_size - 2; i >= 0; i--) {
+//        auto c = convert(raw[i * 2], raw[i * 2 + 1], i * 2);
+//        putc(c, output);
+//    }
+    fseek(output, total_size - 1, SEEK_SET);
+    putc('\n', output);
+    delete[] output_val;
 }
 
 int main(int argc, char *argv[]) {
