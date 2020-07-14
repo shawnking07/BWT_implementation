@@ -136,32 +136,32 @@ bwtdecode/fast:
 	$(MAKE) -f CMakeFiles/bwtdecode.dir/build.make CMakeFiles/bwtdecode.dir/build
 .PHONY : bwtdecode/fast
 
-bwtdecode.o: bwtdecode.cpp.o
+bwtdecode.o: bwtdecode.c.o
 
 .PHONY : bwtdecode.o
 
 # target to build an object file
-bwtdecode.cpp.o:
-	$(MAKE) -f CMakeFiles/bwtdecode.dir/build.make CMakeFiles/bwtdecode.dir/bwtdecode.cpp.o
-.PHONY : bwtdecode.cpp.o
+bwtdecode.c.o:
+	$(MAKE) -f CMakeFiles/bwtdecode.dir/build.make CMakeFiles/bwtdecode.dir/bwtdecode.c.o
+.PHONY : bwtdecode.c.o
 
-bwtdecode.i: bwtdecode.cpp.i
+bwtdecode.i: bwtdecode.c.i
 
 .PHONY : bwtdecode.i
 
 # target to preprocess a source file
-bwtdecode.cpp.i:
-	$(MAKE) -f CMakeFiles/bwtdecode.dir/build.make CMakeFiles/bwtdecode.dir/bwtdecode.cpp.i
-.PHONY : bwtdecode.cpp.i
+bwtdecode.c.i:
+	$(MAKE) -f CMakeFiles/bwtdecode.dir/build.make CMakeFiles/bwtdecode.dir/bwtdecode.c.i
+.PHONY : bwtdecode.c.i
 
-bwtdecode.s: bwtdecode.cpp.s
+bwtdecode.s: bwtdecode.c.s
 
 .PHONY : bwtdecode.s
 
 # target to generate assembly for a file
-bwtdecode.cpp.s:
-	$(MAKE) -f CMakeFiles/bwtdecode.dir/build.make CMakeFiles/bwtdecode.dir/bwtdecode.cpp.s
-.PHONY : bwtdecode.cpp.s
+bwtdecode.c.s:
+	$(MAKE) -f CMakeFiles/bwtdecode.dir/build.make CMakeFiles/bwtdecode.dir/bwtdecode.c.s
+.PHONY : bwtdecode.c.s
 
 bwtsearch.o: bwtsearch.cpp.o
 

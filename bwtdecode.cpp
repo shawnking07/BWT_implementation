@@ -10,7 +10,7 @@
 
 using namespace std;
 
-#define BUFFER_SIZE (512)
+#define BUFFER_SIZE (300)
 
 struct bits_of_val {
     bool _1st;
