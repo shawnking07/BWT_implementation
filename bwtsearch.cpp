@@ -7,7 +7,7 @@
 #include <cstring>
 #include <vector>
 
-#define BUFFER_SIZE (4096)
+#define BUFFER_SIZE (4096*10)
 
 using namespace std;
 
@@ -72,21 +72,38 @@ void construct_occ_table(FILE *str) {
     }
 }
 
-void read_buffer(int start_index, int end_index, FILE *fp) {
+int read_buffer(int index, FILE *fp) {
+    bool reverse = index % BUFFER_SIZE > (BUFFER_SIZE / 2);
+    int start_pos = index - index % BUFFER_SIZE;
     memset(buffer, 0, sizeof(buffer));
-    fseek(fp, start_index - start_index % BUFFER_SIZE, SEEK_SET);
+    fseek(fp, start_pos, SEEK_SET);
     fread(buffer, 1, BUFFER_SIZE, fp);
-
-    // count number for each char
-    auto count = occ_table[start_index / BUFFER_SIZE];
-    for (int i = 0; i < BUFFER_SIZE; i++) {
-        if (i > end_index % BUFFER_SIZE) break;
-        int idx = index_of_values(buffer[i]);
-        if (idx == -1) {
-            break;
-        }
-        buffer_count[i] = count[idx]++;
+    auto count = occ_table[index / BUFFER_SIZE];
+    if (reverse) {
+        count = occ_table[index / BUFFER_SIZE + 1];
     }
+
+    if (reverse) {
+        for (int i = BUFFER_SIZE - 1; i >= 0; i--) {
+            int idx = index_of_values(buffer[i]);
+            if (idx == -1) {
+                continue;
+            }
+            buffer_count[i] = count[idx]--;
+            if (i == index % BUFFER_SIZE)return buffer_count[i] - 1;
+        }
+    } else {
+
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            int idx = index_of_values(buffer[i]);
+            if (idx == -1) {
+                break;
+            }
+            buffer_count[i] = count[idx]++;
+            if (i == index % BUFFER_SIZE)return buffer_count[i];
+        }
+    }
+    return -1;
 }
 
 RANGE generate_range(char c) {
@@ -122,15 +139,13 @@ int search(const string &str, FILE *fp) {
             tmp.end = -2;
             for (pos = next.start; pos <= next.end; pos++) {
                 if (get_c_pos(fp, pos) == *it) {
-                    read_buffer(pos, pos, fp);
-                    tmp.start = buffer_count[pos % BUFFER_SIZE] + total_number[index_of_values(*it) - 1];
+                    tmp.start = read_buffer(pos, fp) + total_number[index_of_values(*it) - 1];
                     break;
                 }
             }
             for (pos2 = next.end; pos2 >= pos; pos2--) {
                 if (get_c_pos(fp, pos2) == *it) {
-                    read_buffer(pos2, pos2, fp);
-                    tmp.end = buffer_count[pos2 % BUFFER_SIZE] + total_number[index_of_values(*it) - 1];
+                    tmp.end = read_buffer(pos2, fp) + total_number[index_of_values(*it) - 1];
                     break;
                 }
             }
