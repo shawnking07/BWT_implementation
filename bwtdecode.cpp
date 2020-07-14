@@ -10,21 +10,16 @@
 
 using namespace std;
 
-#define BUFFER_SIZE (128)
-
-struct bits_of_val {
-    bool _1st;
-    bool _2nd;
-    bool is_end;
-};
+#define BUFFER_SIZE (256)
+#define BITSET_SIZE (15 * 1024 * 1024 + 2)
 
 int total_size = 0;
 vector<vector<int> > first_array;
 vector<int> total_number;
-// refer to A: 00 C: 01 T: 10 G:11
-bitset<30 * 1024 * 1024 + 2> last_T;
-bitset<30 * 1024 * 1024 + 2> raw;
-unsigned int pos_of_end = -1;
+bitset<BITSET_SIZE> last_T;
+vector<char> last_T_c;
+bitset<BITSET_SIZE> raw;
+vector<char> raw_c;
 
 int index_of_values(char c) {
     switch (c) {
@@ -43,39 +38,15 @@ int index_of_values(char c) {
     }
 }
 
-char convert(bool _1st, bool _2nd, int _1st_pos) {
-    if (_1st_pos == pos_of_end) {
-        return '\n';
-    }
-    if (_1st) {
-        if (_2nd) return 'G';
-        else return 'T';
-    } else {
-        if (_2nd) return 'C';
-        else return 'A';
-    }
-}
-
-bits_of_val convert(char c) {
-    switch (c) {
-        case 'A':
-            return bits_of_val{false, false, false};
-        case 'C':
-            return bits_of_val{false, true, false};
-        case 'T':
-            return bits_of_val{true, false, false};
-        case 'G':
-            return bits_of_val{true, true, false};
-        default:
-            return bits_of_val{false, false, true};
-    }
-}
-
 char get_from_bit_set(int pos) {
-    if (pos == pos_of_end)return '\n';
-    return convert(last_T[pos * 2], last_T[pos * 2 + 1], pos * 2);
+    auto tmp = last_T << (BITSET_SIZE - pos - 1);
+    return last_T_c[tmp.count() - 1];
 }
 
+/**
+ * use bitset and a vector to store the whole L
+ * @param input
+ */
 void construct_first_row(FILE *input) {
     int buffer_size = BUFFER_SIZE;
     char *buffer = new char[buffer_size];
@@ -83,6 +54,7 @@ void construct_first_row(FILE *input) {
     int count = 0, idx, t_count = 0;
     first_array.resize(total_size / buffer_size + 2, vector<int>(5));
     total_number.resize(5);
+    char last_char = '\0';
     while (!feof(input)) {
         memset(buffer, 0, buffer_size);
         fread(buffer, 1, buffer_size, input);
@@ -91,12 +63,11 @@ void construct_first_row(FILE *input) {
             if (idx == -1) {
                 break;
             }
-            auto c = convert(buffer[i]);
-            if (c.is_end) {
-                pos_of_end = t_count;
+            if (buffer[i] != last_char) {
+                last_T[t_count] = true;
+                last_T_c.push_back(buffer[i]);
             }
-            last_T[t_count * 2] = c._1st;
-            last_T[t_count * 2 + 1] = c._2nd;
+            last_char = buffer[i];
             first_array[count + 1][idx]++;
             total_number[idx]++;
             t_count++;
@@ -117,16 +88,17 @@ void construct_first_row(FILE *input) {
 
 int read_buffer(int index) {
     auto c = get_from_bit_set(index);
-    bool reverse = (index % BUFFER_SIZE) > (BUFFER_SIZE / 2);
+    bool reverse = (index % BUFFER_SIZE) > (BUFFER_SIZE - 1 / 2);
     if (reverse) {
         auto count = first_array[index / BUFFER_SIZE + 1][index_of_values(c)];
-        for (int i = (index / BUFFER_SIZE + 1) * BUFFER_SIZE - 1; i < index / BUFFER_SIZE * BUFFER_SIZE; i--) {
+        for (int i = (index / BUFFER_SIZE + 1) * BUFFER_SIZE - 1; i >= (index / BUFFER_SIZE) * BUFFER_SIZE; i--) {
             auto val = get_from_bit_set(i);
-            if (val != c) continue;
-            count--;
-            if (i == index)return count - 1;
+            if (val == c) {
+                count--;
+                if (i == index) return count - 1;
+            }
         }
-        return count;
+        return -1;
     } else {
         auto count = first_array[index / BUFFER_SIZE][index_of_values(c)];
         for (int i = index / BUFFER_SIZE * BUFFER_SIZE; i < (index / BUFFER_SIZE + 1) * BUFFER_SIZE; i++) {
@@ -143,22 +115,31 @@ void decode(FILE *output) {
     int active_index = 0;
     int count = 0;
     // reversed output
-    char current_val;
+    char current_val, last_val;
     while (count < total_size) {
         current_val = get_from_bit_set(active_index);
 
-        auto c = convert(current_val);
-        raw[count * 2] = c._1st;
-        raw[count * 2 + 1] = c._2nd;
-
+        if (current_val != last_val) {
+            raw[count] = true;
+            raw_c.push_back(current_val);
+        }
+        last_val = current_val;
         active_index = read_buffer(active_index) + total_number[index_of_values(current_val) - 1] - 1;
         count++;
     }
+
+    auto pos = raw_c.rbegin();
     for (int i = total_size - 2; i >= 0; i--) {
-        auto c = convert(raw[i * 2], raw[i * 2 + 1], i * 2);
-        putc(c, output);
+        if (raw[i] == true) {
+            pos++;
+            putc(*pos, output);
+        } else {
+            putc(*(pos + 1), output);
+        }
+//        cout << *pos;
+
     }
-    fputc('\n', output);
+    putc('\n', output);
 }
 
 int main(int argc, char *argv[]) {
