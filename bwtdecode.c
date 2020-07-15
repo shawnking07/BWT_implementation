@@ -7,8 +7,8 @@
 #include <string.h>
 #include <limits.h>        /* for CHAR_BIT */
 
-#define BUFFER_SIZE (128)
-#define OUTPUT_BUFFER_SIZE (4096)
+#define BUFFER_SIZE (3)
+#define OUTPUT_BUFFER_SIZE (10)
 
 /* implement bitset */
 #define BITMASK(b) (1 << ((b) % CHAR_BIT))
@@ -17,6 +17,9 @@
 #define BITCLEAR(a, b) ((a)[BITSLOT(b)] &= ~BITMASK(b))
 #define BITTEST(a, b) ((a)[BITSLOT(b)] & BITMASK(b))
 #define BITNSLOTS(nb) ((nb + CHAR_BIT - 1) / CHAR_BIT)
+
+#define MAX(a, b) ((a) > (b) ? a : b)
+#define MIN(a, b) ((a) < (b) ? a : b)
 
 struct bits_of_val {
     _Bool _1st;
@@ -50,8 +53,8 @@ int index_of_values(char c) {
     }
 }
 
-char convert(_Bool _1st, _Bool _2nd, int _1st_pos) {
-    if (_1st_pos == pos_of_end) {
+char convert(_Bool _1st, _Bool _2nd, int pos) {
+    if (pos == pos_of_end) {
         return '\n';
     }
     if (_1st) {
@@ -95,9 +98,10 @@ struct bits_of_val convert1(char c) {
 }
 
 char get_from_bit_set(int pos) {
+    if (pos >= total_size)return '\0';
     if (pos == pos_of_end)return '\n';
 //    return convert(last_T[pos * 2], last_T[pos * 2 + 1], pos * 2);
-    return convert(BITTEST(last_T, pos * 2), BITTEST(last_T, pos * 2 + 1), pos * 2);
+    return convert(BITTEST(last_T, pos * 2), BITTEST(last_T, pos * 2 + 1), pos);
 }
 
 void construct_first_row(FILE *input) {
@@ -121,7 +125,11 @@ void construct_first_row(FILE *input) {
                 pos_of_end = t_count;
             }
             if (c._1st) BITSET(last_T, t_count * 2);
+            else
+                BITCLEAR(last_T, t_count * 2);
             if (c._2nd) BITSET(last_T, t_count * 2 + 1);
+            else
+                BITCLEAR(last_T, t_count * 2 + 1);
 //            last_T[t_count * 2] = c._1st;
 //            last_T[t_count * 2 + 1] = c._2nd;
             first_array[count + 1][idx]++;
@@ -147,16 +155,17 @@ int read_buffer(int index) {
     _Bool reverse = (index % BUFFER_SIZE) > (BUFFER_SIZE - 1 / 2);
     if (reverse) {
         int count = first_array[index / BUFFER_SIZE + 1][index_of_values(c)];
-        for (int i = (index / BUFFER_SIZE + 1) * BUFFER_SIZE - 1; i < index / BUFFER_SIZE * BUFFER_SIZE; i--) {
-            int val = get_from_bit_set(i);
+        for (int i = MIN(index - index % BUFFER_SIZE + BUFFER_SIZE, total_size) - 1;
+             i >= index - index % BUFFER_SIZE; i--) {
+            char val = get_from_bit_set(i);
             if (val != c) continue;
+            if (i == index)return count;
             count--;
-            if (i == index)return count - 1;
         }
     } else {
         int count = first_array[index / BUFFER_SIZE][index_of_values(c)];
-        for (int i = index / BUFFER_SIZE * BUFFER_SIZE; i < (index / BUFFER_SIZE + 1) * BUFFER_SIZE; i++) {
-            int val = get_from_bit_set(i);
+        for (int i = index - index % BUFFER_SIZE; i < MIN(index - index % BUFFER_SIZE + BUFFER_SIZE, total_size); i++) {
+            char val = get_from_bit_set(i);
             if (val != c) continue;
             count++;
             if (i == index)return count;
@@ -165,13 +174,17 @@ int read_buffer(int index) {
     return -1;
 }
 
-void reverse(char *str, int len) {
-    char tmp;
-    for (int i = 0; i < len / 2; i++) {
-        tmp = str[i];
-        str[i] = str[len - 1 - i];
-        str[len - 1 - i] = tmp;
+char *strrev(char *str) {
+    char *p1, *p2;
+
+    if (!str || !*str)
+        return str;
+    for (p1 = str, p2 = str + strlen(str) - 1; p2 > p1; ++p1, --p2) {
+        *p1 ^= *p2;
+        *p2 ^= *p1;
+        *p1 ^= *p2;
     }
+    return str;
 }
 
 void decode(FILE *output) {
@@ -179,20 +192,21 @@ void decode(FILE *output) {
     memset(output_val, 0, sizeof(char) * (OUTPUT_BUFFER_SIZE + 1));
     int active_index = 0;
     int count = 0;
-    // reversed output
     char current_val;
     while (count < total_size) {
         current_val = get_from_bit_set(active_index);
         if ((count % OUTPUT_BUFFER_SIZE == 0 && count != 0) || count == total_size - 1) {
+            // reversed output
             if (count % OUTPUT_BUFFER_SIZE != 0) {
                 output_val[count % OUTPUT_BUFFER_SIZE] = '\0';
+            } else {
+                output_val[OUTPUT_BUFFER_SIZE] = '\0';
             }
             fseek(output, total_size - count - 1, SEEK_SET);
-            reverse(output_val, strlen(output_val));
+            output_val = strrev(output_val);
             fwrite(output_val, sizeof(char), strlen(output_val), output);
             memset(output_val, 0, BUFFER_SIZE);
         }
-
 
         output_val[count % OUTPUT_BUFFER_SIZE] = current_val;
 
@@ -200,7 +214,7 @@ void decode(FILE *output) {
         count++;
     }
 //    for (int i = total_size - 2; i >= 0; i--) {
-//        auto c = convert(raw[i * 2], raw[i * 2 + 1], i * 2);
+//        auto c = convert(raw[i * 2], raw[i * 2 + 1], i);
 //        putc(c, output);
 //    }
     fseek(output, total_size - 1, SEEK_SET);

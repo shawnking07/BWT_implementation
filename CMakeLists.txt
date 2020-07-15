@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(a2)
+project(test_case)
 
 set(CMAKE_CXX_STANDARD 17)
 

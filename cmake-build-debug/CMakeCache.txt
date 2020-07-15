@@ -157,7 +157,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=a2
+CMAKE_PROJECT_NAME:STATIC=test_case
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib
@@ -225,10 +225,10 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 ProcessorCount_cmd_sysctl:FILEPATH=/usr/sbin/sysctl
 
 //Value Computed by CMake
-a2_BINARY_DIR:STATIC=/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2/cmake-build-debug
+test_case_BINARY_DIR:STATIC=/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2/cmake-build-debug
 
 //Value Computed by CMake
-a2_SOURCE_DIR:STATIC=/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2
+test_case_SOURCE_DIR:STATIC=/Users/shawn/Documents/UNSW_8543_MIT/2020_Term2/COMP9319 Web Data Compression & Search/Assignment2/a2
 
 
 ########################
