@@ -7,7 +7,7 @@
 #include <string.h>
 #include <limits.h>        /* for CHAR_BIT */
 
-#define BUFFER_SIZE (128)
+#define BUFFER_SIZE (100)
 #define OUTPUT_BUFFER_SIZE (4096)
 
 /* implement bitset */
@@ -153,7 +153,9 @@ void construct_first_row(FILE *input) {
 int read_buffer(int index) {
     char c = get_from_bit_set(index);
     _Bool reverse = (index % BUFFER_SIZE) > (BUFFER_SIZE - 1 / 2);
+    // binary-count ??
     if (reverse) {
+        // start from tail
         int count = first_array[index / BUFFER_SIZE + 1][index_of_values(c)];
         for (int i = MIN(index - index % BUFFER_SIZE + BUFFER_SIZE, total_size) - 1;
              i >= index - index % BUFFER_SIZE; i--) {
@@ -163,6 +165,7 @@ int read_buffer(int index) {
             count--;
         }
     } else {
+        // start from head
         int count = first_array[index / BUFFER_SIZE][index_of_values(c)];
         for (int i = index - index % BUFFER_SIZE; i < MIN(index - index % BUFFER_SIZE + BUFFER_SIZE, total_size); i++) {
             char val = get_from_bit_set(i);
