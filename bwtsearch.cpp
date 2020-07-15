@@ -7,7 +7,7 @@
 #include <cstring>
 #include <vector>
 
-#define BUFFER_SIZE (4096*10)
+#define BUFFER_SIZE (256)
 
 using namespace std;
 
@@ -17,7 +17,6 @@ struct RANGE {
 };
 
 char buffer[BUFFER_SIZE];
-int buffer_count[BUFFER_SIZE];
 // occ table
 vector<vector<int> > occ_table;
 vector<int> total_number;
@@ -41,7 +40,6 @@ int index_of_values(char c) {
 }
 
 void construct_occ_table(FILE *str) {
-    // write count to output as tmp file
     rewind(str);
     int idx, count = 1;
     total_number.resize(5);
@@ -72,35 +70,39 @@ void construct_occ_table(FILE *str) {
     }
 }
 
+/**
+ * count number of c
+ * @param index : start index
+ * @param fp
+ * @return
+ */
 int read_buffer(int index, FILE *fp) {
-    bool reverse = index % BUFFER_SIZE > (BUFFER_SIZE / 2);
     int start_pos = index - index % BUFFER_SIZE;
     memset(buffer, 0, sizeof(buffer));
     fseek(fp, start_pos, SEEK_SET);
     fread(buffer, 1, BUFFER_SIZE, fp);
-    auto count = occ_table[index / BUFFER_SIZE];
-    if (reverse) {
-        count = occ_table[index / BUFFER_SIZE + 1];
-    }
 
+    char c = buffer[index % BUFFER_SIZE];
+    bool reverse = (index % BUFFER_SIZE) > (BUFFER_SIZE - 1 / 2);
+    // binary-count ??
     if (reverse) {
-        for (int i = BUFFER_SIZE - 1; i >= 0; i--) {
-            int idx = index_of_values(buffer[i]);
-            if (idx == -1) {
-                continue;
-            }
-            buffer_count[i] = count[idx]--;
-            if (i == index % BUFFER_SIZE)return buffer_count[i] - 1;
+        // start from tail
+        int count = occ_table[index / BUFFER_SIZE + 1][index_of_values(c)];
+        for (int i = min(index - index % BUFFER_SIZE + BUFFER_SIZE, total_size) - 1;
+             i >= index - index % BUFFER_SIZE; i--) {
+            char val = buffer[i % BUFFER_SIZE];
+            if (val != c) continue;
+            if (i == index)return count;
+            count--;
         }
     } else {
-
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            int idx = index_of_values(buffer[i]);
-            if (idx == -1) {
-                break;
-            }
-            buffer_count[i] = count[idx]++;
-            if (i == index % BUFFER_SIZE)return buffer_count[i];
+        // start from head
+        int count = occ_table[index / BUFFER_SIZE][index_of_values(c)];
+        for (int i = index - index % BUFFER_SIZE; i < min(index - index % BUFFER_SIZE + BUFFER_SIZE, total_size); i++) {
+            char val = buffer[i % BUFFER_SIZE];
+            if (val != c) continue;
+            count++;
+            if (i == index)return count;
         }
     }
     return -1;
@@ -113,49 +115,42 @@ RANGE generate_range(char c) {
         return res;
     }
     res.start = total_number[idx - 1];
-    res.end = total_number[idx];
+    res.end = total_number[idx] - 1;
     return res;
 }
 
-char get_c_pos(FILE *input, int pos) {
-    fseek(input, pos, SEEK_SET);
-    return getc(input);
-}
-
 int search(const string &str, FILE *fp) {
-    int count = 0, pos, pos2;
+    int count = 0, i;
     auto r = generate_range(*str.rbegin());
-    RANGE next{.start=-1, .end=-2};
-    RANGE tmp{.start=-1, .end=-2};
-    for (int i = r.start / BUFFER_SIZE; i < r.end / BUFFER_SIZE + 1; i++) {
-        next.start = max(r.start, i * BUFFER_SIZE);
-        next.end = min((i + 1) * BUFFER_SIZE, r.end) - 1;
-        if (str.size() == 1) {
-            count += next.end - next.start + 1;
-            continue;
-        }
-        for (auto it = str.rbegin() + 1; it != str.rend(); it++) {
-            tmp.start = -1;
-            tmp.end = -2;
-            for (pos = next.start; pos <= next.end; pos++) {
-                if (get_c_pos(fp, pos) == *it) {
-                    tmp.start = read_buffer(pos, fp) + total_number[index_of_values(*it) - 1];
-                    break;
-                }
-            }
-            for (pos2 = next.end; pos2 >= pos; pos2--) {
-                if (get_c_pos(fp, pos2) == *it) {
-                    tmp.end = read_buffer(pos2, fp) + total_number[index_of_values(*it) - 1];
-                    break;
-                }
-            }
-            next = tmp;
-            if (tmp.end - tmp.start < 0 || tmp.start == -1 || tmp.end == -2) {
+    RANGE tmp{-1, -2};
+    if (str.size() == 1) {
+        count += r.end - r.start + 1;
+        return count;
+    }
+    for (auto it = str.rbegin() + 1; it != str.rend(); it++) {
+        fseek(fp, r.start, SEEK_SET);
+        for (i = 0; i <= r.end - r.start; i++) {
+            char c = getc(fp);
+            if (c == *it) {
+                tmp.start = read_buffer(r.start + i, fp) + total_number[index_of_values(*it) - 1] - 1;
                 break;
             }
         }
-        count += next.end - next.start + 1;
+
+        for (i = 0; i <= r.end - r.start; i++) {
+            fseek(fp, r.end - i, SEEK_SET);
+            char c = getc(fp);
+            if (c == *it) {
+                tmp.end = read_buffer(r.end - i, fp) + total_number[index_of_values(*it) - 1] - 1;
+                break;
+            }
+        }
+
+        r = tmp;
+        tmp = {-1, -2};
     }
+    count += r.end - r.start + 1;
+
     return count;
 }
 

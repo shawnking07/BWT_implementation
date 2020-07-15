@@ -250,6 +250,8 @@ int main(int argc, char *argv[]) {
 
     fseek(encodedFile, 0, SEEK_END);
     total_size = ftell(encodedFile);
+
+    /* dynamic 2d array n*5 depends on BUFFER_SIZE */
     first_array = (int **) malloc((total_size / BUFFER_SIZE + 2) * sizeof(int *));
     for (int i = 0; i < total_size / BUFFER_SIZE + 2; i++) {
         first_array[i] = (int *) malloc(sizeof(int) * 5);
