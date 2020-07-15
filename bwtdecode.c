@@ -7,8 +7,8 @@
 #include <string.h>
 #include <limits.h>        /* for CHAR_BIT */
 
-#define BUFFER_SIZE (3)
-#define OUTPUT_BUFFER_SIZE (10)
+#define BUFFER_SIZE (128)
+#define OUTPUT_BUFFER_SIZE (4096)
 
 /* implement bitset */
 #define BITMASK(b) (1 << ((b) % CHAR_BIT))
