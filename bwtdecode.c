@@ -30,7 +30,7 @@ struct bits_of_val {
 int total_size = 0;
 int **first_array;
 int total_number[5];
-// refer to A: 00 C: 01 T: 10 G:11
+/* refer to A: 00 C: 01 T: 10 G:11 */
 //bitset<30 * 1024 * 1024 + 2> last_T;
 char last_T[BITNSLOTS(30 * 1024 * 1024 + 8)];
 //bitset<30 * 1024 * 1024 + 2> raw;
@@ -97,6 +97,11 @@ struct bits_of_val convert1(char c) {
     }
 }
 
+/**
+ * L[pos]
+ * @param pos
+ * @return
+ */
 char get_from_bit_set(int pos) {
     if (pos >= total_size)return '\0';
     if (pos == pos_of_end)return '\n';
@@ -104,6 +109,10 @@ char get_from_bit_set(int pos) {
     return convert(BITTEST(last_T, pos * 2), BITTEST(last_T, pos * 2 + 1), pos);
 }
 
+/**
+ * calc whole number of ACTG (F array) and make checkpoints of trunks
+ * @param input
+ */
 void construct_first_row(FILE *input) {
     int buffer_size = BUFFER_SIZE;
     char *buffer = malloc(sizeof(char) * BUFFER_SIZE);
@@ -150,6 +159,11 @@ void construct_first_row(FILE *input) {
     }
 }
 
+/**
+ * count number of L[index] in its trunk
+ * @param index
+ * @return
+ */
 int read_buffer(int index) {
     char c = get_from_bit_set(index);
     _Bool reverse = (index % BUFFER_SIZE) > (BUFFER_SIZE - 1 / 2);
@@ -177,6 +191,11 @@ int read_buffer(int index) {
     return -1;
 }
 
+/**
+ * reverse string
+ * @param str
+ * @return
+ */
 char *strrev(char *str) {
     char *p1, *p2;
 
