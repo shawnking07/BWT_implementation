@@ -110,7 +110,7 @@ char get_from_bit_set(int pos) {
 }
 
 /**
- * calc whole number of ACTG (F array) and make checkpoints of trunks
+ * calc numbers of whole ACTG (F array) and make checkpoints of trunks
  * @param input
  */
 void construct_first_row(FILE *input) {
