@@ -7,7 +7,10 @@
 #include <cstring>
 #include <vector>
 
-#define BUFFER_SIZE (256)
+int b_size = 1440;
+#define BUFFER_SIZE (b_size)
+
+#define MAGIC_VALUE 250000  /* for dynamic allocating buffer size */
 
 using namespace std;
 
@@ -16,7 +19,7 @@ struct RANGE {
     int end;
 };
 
-char buffer[BUFFER_SIZE];
+char *buffer;
 // occ table
 vector<vector<int> > occ_table;
 vector<int> total_number;
@@ -48,8 +51,8 @@ void construct_occ_table(FILE *str) {
     while (!feof(str)) {
         memset(buffer, 0, BUFFER_SIZE);
         fread(buffer, 1, BUFFER_SIZE, str);
-        for (char i : buffer) {
-            idx = index_of_values(i);
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            idx = index_of_values(buffer[i]);
             if (idx == -1) {
                 break;
             }
@@ -78,7 +81,7 @@ void construct_occ_table(FILE *str) {
  */
 int read_buffer(int index, FILE *fp) {
     int start_pos = index - index % BUFFER_SIZE;
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, sizeof(char) * BUFFER_SIZE);
     fseek(fp, start_pos, SEEK_SET);
     fread(buffer, 1, BUFFER_SIZE, fp);
 
@@ -158,6 +161,8 @@ int main(int argc, char *argv[]) {
     FILE *encodedFile = fopen(argv[1], "rb");
     fseek(encodedFile, 0, SEEK_END);
     total_size = ftell(encodedFile);
+    b_size = max(total_size / MAGIC_VALUE, 64);
+    buffer = new char[b_size];
     construct_occ_table(encodedFile);
     string line;
     while (cin >> line) {
