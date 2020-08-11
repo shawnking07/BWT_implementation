@@ -10,7 +10,7 @@
 int b_size = 1440;
 #define BUFFER_SIZE (b_size)
 
-#define MAGIC_VALUE 250000  /* for dynamic allocating buffer size */
+#define MAGIC_VALUE 75000  /* for dynamic allocating buffer size */
 
 using namespace std;
 
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
     FILE *encodedFile = fopen(argv[1], "rb");
     fseek(encodedFile, 0, SEEK_END);
     total_size = ftell(encodedFile);
-    b_size = max(total_size / MAGIC_VALUE, 64);
+    b_size = max(total_size / MAGIC_VALUE, 128);
     buffer = new char[b_size];
     construct_occ_table(encodedFile);
     string line;
